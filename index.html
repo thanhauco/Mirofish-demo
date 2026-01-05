@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mirofish | On-Chain Oil Quant AI Terminal (3D WebGL)</title>
+  <meta name="description" content="Predicting oil moves with Claude data simulation, OSINT Iran/Hormuz parsers, and Mirofish simulation engine. Dynamic 3D WebGL knowledge graph and on-chain trade execution.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- 3D Force Graph (WebGL) -->
+  <script src="https://unpkg.com/3d-force-graph"></script>
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Futuristic grid particles background -->
+  <div class="grid-background"></div>
+  <div class="glow-effect cyan-glow"></div>
+  <div class="glow-effect purple-glow"></div>
+
+  <!-- Main Dashboard Container -->
+  <div class="dashboard-container">
+    
+    <!-- Top Header Bar -->
+    <header class="dashboard-header">
+      <div class="brand-section">
+        <div class="logo-container">
+          <i class="fa-solid fa-fish-fins logo-icon"></i>
+          <div class="brand-text">
+            <span class="brand-title">MIROFISH</span>
+            <span class="brand-subtitle">3D QUANT TERMINAL</span>
+          </div>
+        </div>
+        <div class="pulse-indicator-container">
+          <span class="pulse-dot"></span>
+          <span class="pulse-text">AI 3D ENGINE ONLINE</span>
+        </div>
+      </div>
+      
+      <!-- Key Stats Display -->
+      <div class="metrics-container">
+        <div class="metric-card" id="metric-profit">
+          <span class="metric-label">MONTHLY PROFIT</span>
+          <span class="metric-value text-glow-green">$586,000</span>
+        </div>
+        <div class="metric-card" id="metric-trades">
+          <span class="metric-label">TRADES (WIN / LOSS)</span>
+          <span class="metric-value">16 <span class="sub-value">(14 W - 2 L)</span></span>
+        </div>
+        <div class="metric-card" id="metric-winrate">
+          <span class="metric-label">WIN RATE</span>
+          <span class="metric-value text-glow-cyan">87.5%</span>
+        </div>
+        <div class="metric-card ticker-card" id="metric-prices">
+          <div class="ticker-item">
+            <span class="ticker-label">WTI CRUDE:</span>
+            <span class="ticker-value text-glow-amber" id="wti-price-ticker">$76.85</span>
+          </div>
+          <div class="ticker-item">
+            <span class="ticker-label">BRENT:</span>
+            <span class="ticker-value text-glow-purple" id="brent-price-ticker">$81.20</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="header-controls">
+        <button id="sound-toggle-btn" class="control-btn" title="Toggle Sonification Sound Effects">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <div class="system-time" id="system-clock">17:20:00</div>
+      </div>
+    </header>
+
+    <!-- Main Grid Workspace -->
+    <main class="dashboard-workspace">
+      
+      <!-- Left Panel: AI Stack & Geopolitical Sandbox -->
+      <section class="workspace-panel panel-left" id="id-panel-left">
+        <!-- 1. The 3-Part AI Stack Status -->
+        <div class="panel-card glassmorphic" id="card-ai-stack">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-microchip card-icon purple-text"></i>3-Part AI Stack</h3>
+            <span class="status-badge purple-badge">ONLINE</span>
+          </div>
+          <div class="card-body">
+            <!-- Claude simulation -->
+            <div class="stack-step" id="step-claude">
+              <div class="step-meta">
+                <span class="step-num">01</span>
+                <span class="step-name">Claude AI Simulation</span>
+                <span class="step-indicator active-spin"><i class="fa-solid fa-spinner"></i></span>
+              </div>
+              <p class="step-desc">Gathers real-time OPEC+ data, logistics metrics, and macro signals for initial simulation inputs.</p>
+              <div class="mini-console" id="claude-console">
+                <div class="console-line text-purple">> Ingesting 3D pipeline feeds...</div>
+              </div>
+            </div>
+
+            <!-- OSINT parser -->
+            <div class="stack-step" id="step-osint">
+              <div class="step-meta">
+                <span class="step-num">02</span>
+                <span class="step-name">OSINT Headline Parser</span>
+                <span class="step-indicator"><i class="fa-solid fa-shield-halved"></i></span>
+              </div>
+              <p class="step-desc">Scrapes Iran & Strait of Hormuz news, tweets, and intelligence feeds. Detects oil shipping threats.</p>
+              <div class="mini-console" id="osint-console">
+                <div class="console-line text-amber">> Monitoring 200 geopolitical nodes...</div>
+              </div>
+            </div>
+
+            <!-- Mirofish Simulator -->
+            <div class="stack-step" id="step-mirofish">
+              <div class="step-meta">
+                <span class="step-num">03</span>
+                <span class="step-name">MiroFish Simulator</span>
+                <span class="step-indicator"><i class="fa-solid fa-network-wired"></i></span>
+              </div>
+              <p class="step-desc">Simulates how each geopolitical headline propagates and alters the physical crude supply-demand curve.</p>
+              <div class="mini-console" id="mirofish-console">
+                <div class="console-line text-cyan">> Elasticity models loading (elasticity coef: -0.12)...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Geopolitical Sandbox Mode -->
+        <div class="panel-card glassmorphic" id="card-sandbox">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-cubes card-icon amber-text"></i>Geopolitical Sandbox</h3>
+            <button id="reset-sandbox-btn" class="panel-action-btn">Reset</button>
+          </div>
+          <div class="card-body sandbox-body">
+            <p class="card-subtext">Drag sliders to manually inject signals and see how the Mirofish Engine re-predicts oil prices in real-time.</p>
+            
+            <div class="slider-group">
+              <div class="slider-meta">
+                <span class="slider-label">Hormuz Shipping Tension</span>
+                <span class="slider-value text-glow-red" id="val-hormuz">15%</span>
+              </div>
+              <input type="range" id="slider-hormuz" class="custom-slider red-slider" min="0" max="100" value="15">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-meta">
+                <span class="slider-label">OPEC Production Cuts</span>
+                <span class="slider-value text-glow-purple" id="val-opec">40%</span>
+              </div>
+              <input type="range" id="slider-opec" class="custom-slider purple-slider" min="0" max="100" value="40">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-meta">
+                <span class="slider-label">US Dollar Index (DXY)</span>
+                <span class="slider-value text-glow-cyan" id="val-dxy">102.5</span>
+              </div>
+              <input type="range" id="slider-dxy" class="custom-slider cyan-slider" min="950" max="1100" value="1025">
+            </div>
+            
+            <div class="sandbox-impact-indicator">
+              <span>PROJECTED OIL DELTA:</span>
+              <span class="impact-val" id="sandbox-impact-val">$0.00 / bbl</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Panel: Interactive 3D Knowledge Graph -->
+      <section class="workspace-panel panel-center" id="id-panel-center">
+        <div class="panel-card glassmorphic flex-column-card" id="card-knowledge-graph">
+          <div class="card-header">
+            <div class="graph-header-title">
+              <h3><i class="fa-solid fa-cube card-icon cyan-text"></i>1,000-Node 3D Constellation Galaxy</h3>
+              <span class="header-hint">Left-click: Rotate | Right-click: Pan | Scroll: Zoom</span>
+            </div>
+            <div class="graph-search-container">
+              <input type="text" id="graph-search-input" placeholder="Search node...">
+              <button id="graph-search-btn" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+          </div>
+          
+          <!-- 3D graph layout & navigation toolbar -->
+          <div class="graph-toolbar">
+            <button id="reset-cam-btn" class="toolbar-btn"><i class="fa-solid fa-camera"></i> Reset View</button>
+            <button id="orbit-btn" class="toolbar-btn active"><i class="fa-solid fa-rotate"></i> Auto Orbit</button>
+            
+            <div class="divider"></div>
+            
+            <!-- Zoom slider -->
+            <div class="zoom-slider-wrapper">
+              <i class="fa-solid fa-magnifying-glass-minus zoom-icon"></i>
+              <input type="range" id="zoom-slider" class="custom-slider zoom-slider" min="100" max="1500" value="600">
+              <i class="fa-solid fa-magnifying-glass-plus zoom-icon"></i>
+            </div>
+          </div>
+
+          <!-- 3D viewport wrapper -->
+          <div class="cytoscape-wrapper">
+            <div id="3d-graph"></div>
+            
+            <!-- Floating graph details panel -->
+            <div class="node-details-overlay" id="node-details">
+              <div class="details-header">
+                <span class="details-node-type" id="node-detail-type">Node Type</span>
+                <button class="close-overlay-btn" id="close-detail-btn"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <h4 id="node-detail-title">Select a node to inspect</h4>
+              <p id="node-detail-description">The 3D WebGL knowledge graph visualizes how 1,000 live data feeds orbital nodes (OSINT channels, OPEC wells, maritime tankers, macro indices) funnel signals into the Mirofish core, causing on-chain executions. Drag any node to expand and shoot particles manually!</p>
+              <div class="node-metrics-box" id="node-detail-metrics" style="display:none;">
+                <div class="metric-row">
+                  <span class="row-label">Orbit Cluster:</span>
+                  <span class="row-value" id="node-weight">-</span>
+                </div>
+                <div class="metric-row">
+                  <span class="row-label">System State:</span>
+                  <span class="row-value text-green" id="node-status">STABLE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel: Market Charts & On-Chain Trade Logs -->
+      <section class="workspace-panel panel-right" id="id-panel-right">
+        <!-- 1. Real-time Oil Price Chart -->
+        <div class="panel-card glassmorphic" id="card-chart">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-chart-line card-icon amber-text"></i>Crude Oil Market Feed</h3>
+            <span class="live-badge">LIVE UPDATES</span>
+          </div>
+          <div class="card-body chart-body">
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot bg-amber"></span>WTI Crude</span>
+              <span class="legend-item"><span class="legend-dot bg-purple"></span>Brent Crude</span>
+            </div>
+            
+            <!-- Custom responsive SVG Chart container -->
+            <div class="svg-chart-container" id="oil-chart-container">
+              <svg id="oil-price-chart" viewBox="0 0 500 220" preserveAspectRatio="none">
+                <!-- Grid Lines -->
+                <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <line x1="40" y1="60" x2="480" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <line x1="40" y1="100" x2="480" y2="100" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <line x1="40" y1="140" x2="480" y2="140" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <line x1="40" y1="180" x2="480" y2="180" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                
+                <!-- Y-Axis Labels -->
+                <text x="35" y="25" text-anchor="end" class="chart-axis-text" id="y-label-max">$85.00</text>
+                <text x="35" y="105" text-anchor="end" class="chart-axis-text" id="y-label-mid">$80.00</text>
+                <text x="35" y="185" text-anchor="end" class="chart-axis-text" id="y-label-min">$75.00</text>
+
+                <!-- SVG Paths (Rendered dynamically in app.js) -->
+                <path id="wti-path" d="" fill="none" stroke="var(--color-amber)" stroke-width="2.5" stroke-linecap="round" />
+                <path id="brent-path" d="" fill="none" stroke="var(--color-purple)" stroke-width="2.5" stroke-linecap="round" />
+                
+                <!-- Chart markers -->
+                <circle id="wti-marker" cx="0" cy="0" r="4.5" fill="var(--color-amber)" stroke="#0d1117" stroke-width="1.5" style="display:none;" />
+                <circle id="brent-marker" cx="0" cy="0" r="4.5" fill="var(--color-purple)" stroke="#0d1117" stroke-width="1.5" style="display:none;" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. On-Chain Transaction Logs -->
+        <div class="panel-card glassmorphic flex-column-card" id="card-chain-logs">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-list-check card-icon green-text"></i>On-Chain Trade Executions</h3>
+            <span class="block-height-tag">BLOCK: <span id="current-block">19,842,504</span></span>
+          </div>
+          <div class="card-body trade-log-body" id="trade-log-container">
+            <!-- Simulated trades will prepend here -->
+            <div class="no-trades-message" id="no-trades-msg">
+              <i class="fa-solid fa-file-contract"></i>
+              <span>No trade events emitted this block cycle</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Simulation Console -->
+    <footer class="dashboard-console glassmorphic">
+      
+      <!-- Simulation Controls -->
+      <div class="console-controls">
+        <button id="toggle-sim-btn" class="console-action-btn pulse-action-btn">
+          <i class="fa-solid fa-pause"></i> <span>PAUSE SYSTEM</span>
+        </button>
+        
+        <div class="selector-wrapper">
+          <label for="scenario-select">Inject Scenario:</label>
+          <select id="scenario-select" class="console-select">
+            <option value="0">Scenario 1: Iran Tanker Seizure (Hormuz conflict)</option>
+            <option value="1">Scenario 2: OPEC+ Production Drop (Cartel action)</option>
+            <option value="2">Scenario 3: US crude stockpile surplus (EIA report)</option>
+            <option value="3">Scenario 4: Hormuz drone rumors debunked (Stabilization)</option>
+          </select>
+        </div>
+
+        <button id="trigger-scenario-btn" class="console-action-btn">
+          <i class="fa-solid fa-bolt"></i> FORCE TRIGGER
+        </button>
+        
+        <div class="sim-speed-wrapper">
+          <span>Speed:</span>
+          <button class="speed-btn active" data-speed="1">1x</button>
+          <button class="speed-btn" data-speed="2">2x</button>
+          <button class="speed-btn" data-speed="3">3x</button>
+        </div>
+      </div>
+
+      <!-- Realtime text stream terminal -->
+      <div class="console-terminal">
+        <div class="terminal-header">
+          <span class="terminal-title">3D WEBGL GRAPH SIGNAL STREAM & BLOCK LEDGER</span>
+          <span class="terminal-indicators">
+            <span class="indicator-item"><span class="legend-dot bg-cyan"></span>CLAUDE INGEST</span>
+            <span class="indicator-item"><span class="legend-dot bg-amber"></span>OSINT SCRAPERS</span>
+            <span class="indicator-item"><span class="legend-dot bg-purple"></span>MIROFISH SIM</span>
+            <span class="indicator-item"><span class="legend-dot bg-green"></span>EVM SMART CONTRACTS</span>
+          </span>
+        </div>
+        <div class="terminal-output" id="terminal-text-container">
+          <!-- Text logs appended here -->
+          <div class="terminal-row text-dim">[17:18:34] 3D WebGL Terminal initialized.</div>
+          <div class="terminal-row text-dim">[17:18:35] Generated 1,000 constellation nodes successfully.</div>
+          <div class="terminal-row text-dim">[17:18:36] On-chain trade execution relay linked. Smart contract: 0x9f56...c1b9</div>
+        </div>
+      </div>
+
+    </footer>
+
+  </div>
+
+  <!-- Claude Prompt Inspector Drawer (Advanced Feature) -->
+  <div class="prompt-inspector-drawer" id="prompt-drawer">
+    <div class="drawer-header">
+      <h3><i class="fa-solid fa-terminal drawer-icon"></i>Claude Prompt & Telemetry Inspector</h3>
+      <button class="drawer-close-btn" id="close-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-tab="prompt">Prompt Payload</button>
+      <button class="drawer-tab" data-tab="context">OSINT Scraped Context</button>
+      <button class="drawer-tab" data-tab="mirofish-json">Mirofish JSON Output</button>
+    </div>
+    <div class="drawer-content">
+      <pre id="drawer-pre-code">Select an event or trigger a simulation to inspect Claude's backend prompts.</pre>
+    </div>
+  </div>
+
+  <!-- Trigger Drawer Button -->
+  <button id="open-drawer-btn" class="drawer-trigger-btn" title="Open Claude Prompt Inspector">
+    <i class="fa-solid fa-code"></i> Prompt Inspector
+  </button>
+
+  <!-- App Logic Javascript -->
+  <script src="app.js"></script>
+</body>
+</html>
