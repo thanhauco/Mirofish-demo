@@ -23,8 +23,10 @@ let state = {
   activeScenarioIndex: 0,
   currentSimTimeout: null,
   activeTab: 'prompt',
-  autoOrbit: true
+  autoOrbit: true,
+  showSatellites: false
 };
+
 
 // Web Audio API Synthesizer (Zero-asset Terminal Audio)
 const AudioEngine = {
@@ -271,20 +273,20 @@ Twitter sentiment: Panic index drops from 8.2 to 2.1 in 30 minutes.`,
 
 // 3D-Force-Graph Constellation Generator
 let Graph;
-const nodes = [];
-const links = [];
+const allNodes = [];
+const allLinks = [];
 
 const coreNodes = [
-  { id: 'hormuz_shipping', label: 'Hormuz Shipping AIS', type: 'geopolitical', size: 14, color: '#ff3c5f', desc: 'AIS Transponders tracking shipping lanes in Strait of Hormuz.', isCore: true },
-  { id: 'opec_cartel', label: 'OPEC+ Production Quotas', type: 'geopolitical', size: 14, color: '#b64eff', desc: 'Tracks cartel compliance sheets and output limits.', isCore: true },
-  { id: 'dxy_index', label: 'US Dollar Index (DXY)', type: 'macro', size: 14, color: '#5eaeff', desc: 'Global currency index driving physical pricing.', isCore: true },
-  { id: 'osint', label: 'OSINT Parser Feed', type: 'stack', size: 14, color: '#ffaa00', desc: 'Natural language news parsing stream agent.', isCore: true },
-  { id: 'claude', label: 'Claude Data Ingester', type: 'stack', size: 14, color: '#b64eff', desc: 'Simulates datasets and parameters.', isCore: true },
-  { id: 'mirofish', label: 'Mirofish Engine', type: 'stack', size: 16, color: '#00f0ff', desc: 'Computes supply-demand shocks.', isCore: true },
-  { id: 'wti_crude', label: 'WTI Pricing vector', type: 'market', size: 14, color: '#ffe600', desc: 'West Texas Intermediate crude benchmark.', isCore: true },
-  { id: 'brent_crude', label: 'Brent Pricing vector', type: 'market', size: 14, color: '#ff7700', desc: 'Brent International crude benchmark.', isCore: true },
-  { id: 'smart_contract', label: 'Trade Router Contract', type: 'onchain', size: 14, color: '#00ff88', desc: 'Smart contract executing margin swaps.', isCore: true },
-  { id: 'on_chain_ledger', label: 'EVM Block EventLog', type: 'onchain', size: 14, color: '#00ffaa', desc: 'Block explorer events emitted on trade completion.', isCore: true }
+  { id: 'hormuz_shipping', label: 'Hormuz Shipping AIS', type: 'geopolitical', size: 14, color: '#ff3c5f', desc: 'AIS Transponders tracking shipping lanes in Strait of Hormuz.', isCore: true, isMajor: true },
+  { id: 'opec_cartel', label: 'OPEC+ Production Quotas', type: 'geopolitical', size: 14, color: '#b64eff', desc: 'Tracks cartel compliance sheets and output limits.', isCore: true, isMajor: true },
+  { id: 'dxy_index', label: 'US Dollar Index (DXY)', type: 'macro', size: 14, color: '#5eaeff', desc: 'Global currency index driving physical pricing.', isCore: true, isMajor: true },
+  { id: 'osint', label: 'OSINT Parser Feed', type: 'stack', size: 14, color: '#ffaa00', desc: 'Natural language news parsing stream agent.', isCore: true, isMajor: true },
+  { id: 'claude', label: 'Claude Data Ingester', type: 'stack', size: 14, color: '#b64eff', desc: 'Simulates datasets and parameters.', isCore: true, isMajor: true },
+  { id: 'mirofish', label: 'Mirofish Engine', type: 'stack', size: 16, color: '#00f0ff', desc: 'Computes supply-demand shocks.', isCore: true, isMajor: true },
+  { id: 'wti_crude', label: 'WTI Pricing vector', type: 'market', size: 14, color: '#ffe600', desc: 'West Texas Intermediate crude benchmark.', isCore: true, isMajor: true },
+  { id: 'brent_crude', label: 'Brent Pricing vector', type: 'market', size: 14, color: '#ff7700', desc: 'Brent International crude benchmark.', isCore: true, isMajor: true },
+  { id: 'smart_contract', label: 'Trade Router Contract', type: 'onchain', size: 14, color: '#00ff88', desc: 'Smart contract executing margin swaps.', isCore: true, isMajor: true },
+  { id: 'on_chain_ledger', label: 'EVM Block EventLog', type: 'onchain', size: 14, color: '#00ffaa', desc: 'Block explorer events emitted on trade completion.', isCore: true, isMajor: true }
 ];
 
 const coreEdges = [
@@ -302,39 +304,66 @@ const coreEdges = [
 
 function generateConstellation() {
   // 1. Push core nodes
-  coreNodes.forEach(n => nodes.push({ ...n }));
+  coreNodes.forEach(n => allNodes.push({ ...n }));
   
   // 2. Push core edges
-  coreEdges.forEach(e => links.push({ ...e, width: 2, color: 'rgba(255,255,255,0.2)' }));
+  coreEdges.forEach(e => allLinks.push({ ...e, width: 2, color: 'rgba(255,255,255,0.2)' }));
   
-  // 3. Generate Satellite nodes to reach 1,000 nodes total
-  // We distribute 990 satellites across 5 major core clusters:
+  // 3. Generate 190 Secondary Major nodes (38 per cluster) & 800 Satellites (160 per cluster)
+  // Total: 10 Core + 190 Major + 800 Satellites = 1,000 nodes total
   const clusters = [
-    { coreId: 'hormuz_shipping', count: 200, prefix: 'Tanker AIS-', color: '#ff3c5f', type: 'geopolitical', desc: 'Active cargo vessel transponder telemetry tracking coordinates.' },
-    { coreId: 'opec_cartel', count: 200, prefix: 'OPEC Well-', color: '#b64eff', type: 'geopolitical', desc: 'State oil extraction terminal monitoring compliance status.' },
-    { coreId: 'osint', count: 190, prefix: 'OSINT @', color: '#ffaa00', type: 'stack', desc: 'Geopolitical alert intelligence source scraping feed.' },
-    { coreId: 'dxy_index', count: 200, prefix: 'Index DXY-', color: '#5eaeff', type: 'macro', desc: 'Macroeconomic currency fluctuations parameter.' },
-    { coreId: 'on_chain_ledger', count: 200, prefix: 'Validator Node-', color: '#00ffaa', type: 'onchain', desc: 'EVM blockchain node validating on-chain trading logs.' }
+    { coreId: 'hormuz_shipping', prefix: 'Tanker AIS', color: '#ff3c5f', type: 'geopolitical', desc: 'Cargo vessel telemetry tracking coordinates.' },
+    { coreId: 'opec_cartel', prefix: 'OPEC Well', color: '#b64eff', type: 'geopolitical', desc: 'State oil extraction terminal monitor.' },
+    { coreId: 'osint', prefix: 'OSINT Feed', color: '#ffaa00', type: 'stack', desc: 'Geopolitical alert intelligence stream feed.' },
+    { coreId: 'dxy_index', prefix: 'DXY Currency', color: '#5eaeff', type: 'macro', desc: 'Macroeconomic currency fluctuation tracker.' },
+    { coreId: 'on_chain_ledger', prefix: 'EVM Validator', color: '#00ffaa', type: 'onchain', desc: 'EVM blockchain node validating trading logs.' }
   ];
   
   clusters.forEach(c => {
-    for (let i = 1; i <= c.count; i++) {
-      const satId = `${c.coreId}-sat-${i}`;
-      nodes.push({
+    // Generate 38 Major nodes for this cluster
+    for (let i = 1; i <= 38; i++) {
+      const majorId = `${c.coreId}-major-${i}`;
+      allNodes.push({
+        id: majorId,
+        label: `${c.prefix} Hub ${i}`,
+        type: c.type,
+        size: 6,
+        color: c.color,
+        desc: `${c.desc} Primary core pipeline agent.`,
+        isCore: false,
+        isMajor: true
+      });
+      // Link Major to Core parent
+      allLinks.push({
+        source: majorId,
+        target: c.coreId,
+        width: 1.2,
+        color: 'rgba(255,255,255,0.12)',
+        isMajorLink: true,
+        cluster: c.coreId
+      });
+    }
+
+    // Generate 160 Satellite nodes for this cluster
+    for (let j = 1; j <= 160; j++) {
+      const satId = `${c.coreId}-sat-${j}`;
+      allNodes.push({
         id: satId,
-        label: `${c.prefix}${i}`,
+        label: `${c.prefix} Satellite ${j}`,
         type: c.type,
         size: 2,
         color: c.color,
-        desc: `${c.desc} Cluster: ${c.coreId}.`,
-        isCore: false
+        desc: `${c.desc} Background data source telemetry emitter.`,
+        isCore: false,
+        isMajor: false
       });
-      // Link to parent
-      links.push({
+      // Link Satellite to one of the 38 Major nodes in its cluster in round-robin fashion
+      const parentMajorId = `${c.coreId}-major-${((j - 1) % 38) + 1}`;
+      allLinks.push({
         source: satId,
-        target: c.coreId,
+        target: parentMajorId,
         width: 0.5,
-        color: 'rgba(255,255,255,0.03)',
+        color: 'rgba(255,255,255,0.02)',
         isSatellite: true,
         cluster: c.coreId
       });
@@ -342,11 +371,61 @@ function generateConstellation() {
   });
 }
 
+function updateGraphData() {
+  let nodesToRender;
+  let linksToRender;
+  
+  if (state.showSatellites) {
+    nodesToRender = allNodes;
+    linksToRender = allLinks;
+    const titleText = document.getElementById('graph-title-text');
+    if (titleText) titleText.innerText = "1,000-Node Constellation Galaxy";
+    const toggleBtn = document.getElementById('satellites-toggle-btn');
+    if (toggleBtn) toggleBtn.classList.add('active');
+  } else {
+    nodesToRender = allNodes.filter(n => n.isMajor);
+    
+    // Create a Set of node IDs that are rendered for fast lookup
+    const renderedNodeIds = new Set(nodesToRender.map(n => n.id));
+    
+    linksToRender = allLinks.filter(l => {
+      const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+      const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+      return renderedNodeIds.has(sourceId) && renderedNodeIds.has(targetId);
+    });
+    
+    const titleText = document.getElementById('graph-title-text');
+    if (titleText) titleText.innerText = "200-Node Core Network";
+    const toggleBtn = document.getElementById('satellites-toggle-btn');
+    if (toggleBtn) toggleBtn.classList.remove('active');
+  }
+  
+  Graph.graphData({ nodes: nodesToRender, links: linksToRender });
+  
+  // Adjust physics forces slightly depending on scale
+  if (state.showSatellites) {
+    Graph.d3Force('charge').strength(-30);
+    Graph.d3Force('link').distance(link => link.isSatellite ? 12 : (link.isMajorLink ? 45 : 90));
+  } else {
+    Graph.d3Force('charge').strength(-80);
+    Graph.d3Force('link').distance(link => link.isMajorLink ? 50 : 100);
+  }
+}
+
+
 function init3DGraph() {
   const container = document.getElementById('3d-graph');
   
+  const initialNodes = allNodes.filter(n => n.isMajor);
+  const initialNodeIds = new Set(initialNodes.map(n => n.id));
+  const initialLinks = allLinks.filter(l => {
+    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+    return initialNodeIds.has(sourceId) && initialNodeIds.has(targetId);
+  });
+
   Graph = ForceGraph3D()(container)
-    .graphData({ nodes, links })
+    .graphData({ nodes: initialNodes, links: initialLinks })
     .backgroundColor('rgba(6, 9, 19, 0)') // transparent background so our CSS backgrounds show through
     .showNavInfo(false)
     .nodeVal(node => node.size)
@@ -370,10 +449,11 @@ function init3DGraph() {
     // DRAG ANIMATIONS - Fluid responses as requested
     .onNodeDrag((node) => {
       // Glow and double size
-      node.size = node.isCore ? 35 : 10;
+      node.size = node.isCore ? 35 : (node.isMajor ? 15 : 10);
       
       // Inject particle stream along connected links
-      links.forEach(l => {
+      const activeLinks = Graph.graphData().links;
+      activeLinks.forEach(l => {
         const isConnected = (typeof l.source === 'object' ? l.source.id === node.id : l.source === node.id) ||
                             (typeof l.target === 'object' ? l.target.id === node.id : l.target === node.id);
         if (isConnected) {
@@ -392,10 +472,11 @@ function init3DGraph() {
     
     // DRAG RELEASE ANIMATION - Physics settling & particle blast
     .onNodeDragEnd((node) => {
-      node.size = node.isCore ? 14 : 2;
+      node.size = node.isCore ? 14 : (node.isMajor ? 6 : 2);
       
       // Emit a fast ripple along connected edges
-      links.forEach(l => {
+      const activeLinks = Graph.graphData().links;
+      activeLinks.forEach(l => {
         const isConnected = (typeof l.source === 'object' ? l.source.id === node.id : l.source === node.id) ||
                             (typeof l.target === 'object' ? l.target.id === node.id : l.target === node.id);
         if (isConnected) {
@@ -411,12 +492,13 @@ function init3DGraph() {
       
       // Fade out blast after 1s
       setTimeout(() => {
-        links.forEach(l => {
+        const currentLinks = Graph.graphData().links;
+        currentLinks.forEach(l => {
           const isConnected = (typeof l.source === 'object' ? l.source.id === node.id : l.source === node.id) ||
                               (typeof l.target === 'object' ? l.target.id === node.id : l.target === node.id);
           if (isConnected) {
             l.particles = 0;
-            l.color = l.isSatellite ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.2)';
+            l.color = l.isSatellite ? 'rgba(255,255,255,0.03)' : (l.isMajorLink ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)');
           }
         });
         Graph.linkColor(l => l.color);
@@ -428,18 +510,19 @@ function init3DGraph() {
     });
 
   // Customize D3 forces to arrange clusters neatly in 3D Space
-  Graph.d3Force('charge').strength(-45);
-  Graph.d3Force('link').distance(link => link.isSatellite ? 15 : 90);
+  Graph.d3Force('charge').strength(-80);
+  Graph.d3Force('link').distance(link => link.isMajorLink ? 50 : 100);
   
   // Continuous Breathing Loop at 60 FPS
   let angle = 0;
   function breatheLoop() {
     angle += 0.04;
-    nodes.forEach(node => {
+    const activeNodes = Graph.graphData().nodes;
+    activeNodes.forEach(node => {
       // Core nodes breathe larger, satellites breathing is subtle
       if (!node.dragged) {
-        const base = node.isCore ? 14 : 2;
-        const amp = node.isCore ? 1.5 : 0.4;
+        const base = node.isCore ? 14 : (node.isMajor ? 6 : 2);
+        const amp = node.isCore ? 1.5 : (node.isMajor ? 0.8 : 0.4);
         const freq = node.isCore ? 1 : 2.5;
         node.size = base + Math.sin(angle * freq) * amp;
       }
@@ -475,26 +558,34 @@ function init3DGraph() {
   
   // Ambient noise particle signals (continuous low frequency feeds)
   setInterval(() => {
-    // Pick 8 random satellite edges to stream 1 particle
+    const activeLinks = Graph.graphData().links;
+    if (activeLinks.length === 0) return;
+    
+    // Pick 8 random links to stream 1 particle
+    const linksToUpdate = [];
     for (let i = 0; i < 8; i++) {
-      const idx = Math.floor(Math.random() * links.length);
-      const link = links[idx];
-      if (link && link.isSatellite) {
+      const idx = Math.floor(Math.random() * activeLinks.length);
+      const link = activeLinks[idx];
+      if (link) {
         link.particles = 1;
         link.particleSpeed = 0.008;
         link.particleWidth = 1.0;
-        link.particleColor = link.color;
-        
-        // Remove after particle finishes
-        setTimeout(() => {
-          link.particles = 0;
-          Graph.linkDirectionalParticles(l => l.particles);
-        }, 3000);
+        link.particleColor = link.color || '#ffffff';
+        linksToUpdate.push(link);
       }
     }
     Graph.linkDirectionalParticles(l => l.particles);
+    
+    // Remove after particle finishes
+    setTimeout(() => {
+      linksToUpdate.forEach(link => {
+        link.particles = 0;
+      });
+      Graph.linkDirectionalParticles(l => l.particles);
+    }, 3000);
   }, 1200);
 }
+
 
 // Node selection detail overlays
 function selectNode(node) {
@@ -627,10 +718,17 @@ const getDelay = (baseDelay) => {
 function executePipeline(scenarioIdx) {
   const scenario = scenarios[scenarioIdx];
   
+  // Auto-enable satellites when simulation runs so user sees the full signal stream
+  if (!state.showSatellites) {
+    state.showSatellites = true;
+    updateGraphData();
+    logTerminal(`[SYSTEM] Activating satellite constellation for simulation pipeline signal tracking...`, 'green');
+  }
+  
   // Clear previous link particles
-  links.forEach(l => {
+  allLinks.forEach(l => {
     l.particles = 0;
-    l.color = l.isSatellite ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.2)';
+    l.color = l.isSatellite ? 'rgba(255,255,255,0.03)' : (l.isMajorLink ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)');
   });
   Graph.linkDirectionalParticles(l => l.particles);
   Graph.linkColor(l => l.color);
@@ -650,7 +748,7 @@ function executePipeline(scenarioIdx) {
   }
   
   // Stream particles from 20 random satellites in the target category to the core node
-  links.forEach(l => {
+  allLinks.forEach(l => {
     if (l.isSatellite && l.cluster === targetCluster && Math.random() < 0.2) {
       l.particles = 5;
       l.particleSpeed = 0.03;
@@ -660,7 +758,7 @@ function executePipeline(scenarioIdx) {
   });
   
   // Also highlight core OSINT edge
-  const e1_2 = links.find(l => l.id === 'e1' || l.id === 'e2');
+  const e1_2 = allLinks.find(l => l.id === 'e1' || l.id === 'e2');
   if (e1_2) {
     e1_2.particles = 8;
     e1_2.particleSpeed = 0.04;
@@ -677,7 +775,7 @@ function executePipeline(scenarioIdx) {
   // STEP 2: Ingest by Claude (2s base delay)
   state.currentSimTimeout = setTimeout(() => {
     // Clear satellites
-    links.forEach(l => {
+    allLinks.forEach(l => {
       if (l.isSatellite) {
         l.particles = 0;
         l.color = 'rgba(255,255,255,0.03)';
@@ -688,7 +786,7 @@ function executePipeline(scenarioIdx) {
     logTerminal(`[CLAUDE] Evaluating supply shocks. Formulating prompt context...`, 'purple');
     
     // Ingest edge particles
-    const e3 = links.find(l => l.id === 'e3');
+    const e3 = allLinks.find(l => l.id === 'e3');
     if (e3) {
       e3.particles = 15;
       e3.particleSpeed = 0.05;
@@ -710,8 +808,8 @@ function executePipeline(scenarioIdx) {
       logTerminal(`[MIROFISH] Modeling complete. Shock coefficient verified. WTI Delta: ${scenario.impactWti > 0 ? '+' : ''}$${scenario.impactWti}`, 'cyan');
       
       // Ingest from Claude to Mirofish + DXY to Mirofish
-      const e4 = links.find(l => l.id === 'e4');
-      const e5 = links.find(l => l.id === 'e5');
+      const e4 = allLinks.find(l => l.id === 'e4');
+      const e5 = allLinks.find(l => l.id === 'e5');
       [e4, e5].forEach(l => {
         if (l) {
           l.particles = 15;
@@ -747,8 +845,8 @@ function executePipeline(scenarioIdx) {
         document.getElementById('brent-price-ticker').innerText = `$${state.brentPrice.toFixed(2)}`;
         
         // Shoot price particles
-        const e6 = links.find(l => l.id === 'e6');
-        const e7 = links.find(l => l.id === 'e7');
+        const e6 = allLinks.find(l => l.id === 'e6');
+        const e7 = allLinks.find(l => l.id === 'e7');
         [e6, e7].forEach(l => {
           if (l) {
             l.particles = 15;
@@ -772,8 +870,8 @@ function executePipeline(scenarioIdx) {
           logTerminal(`[ORACLE] Broadcasting margin oracle inputs to EVM Smart contracts...`, 'green');
           
           // Oracle to smart contract
-          const e8 = links.find(l => l.id === 'e8');
-          const e9 = links.find(l => l.id === 'e9');
+          const e8 = allLinks.find(l => l.id === 'e8');
+          const e9 = allLinks.find(l => l.id === 'e9');
           [e8, e9].forEach(l => {
             if (l) {
               l.particles = 15;
@@ -878,7 +976,7 @@ function executePipeline(scenarioIdx) {
             logContainer.insertBefore(tradeCard, logContainer.firstChild);
             
             // Block validation emission: Shoot particles OUT to all 200 ledger validators
-            const e10 = links.find(l => l.id === 'e10');
+            const e10 = allLinks.find(l => l.id === 'e10');
             if (e10) {
               e10.particles = 15;
               e10.particleSpeed = 0.06;
@@ -886,7 +984,7 @@ function executePipeline(scenarioIdx) {
               e10.color = '#00ffaa';
             }
             
-            links.forEach(l => {
+            allLinks.forEach(l => {
               if (l.isSatellite && l.cluster === 'on_chain_ledger' && Math.random() < 0.25) {
                 // Shoot particles OUTWARDS (invert direction concept by utilizing speed)
                 l.particles = 5;
@@ -914,7 +1012,7 @@ function executePipeline(scenarioIdx) {
             // Revert all blocks to stable
             setTimeout(() => {
               if (e10) e10.particles = 0;
-              links.forEach(l => {
+              allLinks.forEach(l => {
                 if (l.isSatellite) {
                   l.particles = 0;
                   l.color = 'rgba(255,255,255,0.03)';
@@ -987,8 +1085,8 @@ function recalculateSandbox() {
   if (state.sandbox.opec > 40) targets.push('opec_cartel');
   if (state.sandbox.dxy !== 102.5) targets.push('dxy_index');
   
-  links.forEach(l => {
-    if (l.isSatellite && targets.includes(l.cluster) && Math.random() < 0.15) {
+  allLinks.forEach(l => {
+    if (state.showSatellites && l.isSatellite && targets.includes(l.cluster) && Math.random() < 0.15) {
       l.particles = 4;
       l.particleSpeed = 0.02;
       l.particleColor = '#00f0ff';
@@ -1002,6 +1100,7 @@ function recalculateSandbox() {
   Graph.linkDirectionalParticles(l => l.particles);
 }
 
+
 // Bind event listeners
 document.addEventListener('DOMContentLoaded', () => {
   updateClock();
@@ -1013,8 +1112,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Init 3D Viewport
   init3DGraph();
   
+  // Satellite Toggle Button binding
+  const satToggleBtn = document.getElementById('satellites-toggle-btn');
+  if (satToggleBtn) {
+    satToggleBtn.addEventListener('click', () => {
+      state.showSatellites = !state.showSatellites;
+      updateGraphData();
+      if (state.showSatellites) {
+        logTerminal("[3D GRAPH] Activated satellite constellation nodes (+800 channels).", "green");
+      } else {
+        logTerminal("[3D GRAPH] Disengaged satellite nodes. Viewing core 200 pipeline hubs.", "cyan");
+      }
+      AudioEngine.playPing();
+    });
+  }
+  
+  // Log startup message about loading 200 major nodes
+  logTerminal("[SYSTEM] Loaded 200 core infrastructure & major pipeline nodes.", "cyan");
+  logTerminal("[SYSTEM] 800 background satellite emitters in standby.", "dim");
+  
   // Chart render
   drawChart();
+
   
   // Sound Mute
   const soundBtn = document.getElementById('sound-toggle-btn');
@@ -1103,12 +1222,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const query = searchInput.value.toLowerCase().trim();
     if (!query) return;
     
-    const matchedNode = nodes.find(n => n.label.toLowerCase().includes(query));
+    const activeNodes = Graph.graphData().nodes;
+    const matchedNode = activeNodes.find(n => n.label.toLowerCase().includes(query));
     if (matchedNode) {
       selectNode(matchedNode);
       logTerminal(`[3D GRAPH] Located node: "${matchedNode.label}"`, 'cyan');
     } else {
-      logTerminal(`[3D GRAPH] Search failed: no node containing "${query}"`, 'red');
+      const matchedInAll = allNodes.find(n => n.label.toLowerCase().includes(query));
+      if (matchedInAll) {
+        state.showSatellites = true;
+        updateGraphData();
+        setTimeout(() => {
+          const reMatchedNode = Graph.graphData().nodes.find(n => n.id === matchedInAll.id);
+          if (reMatchedNode) {
+            selectNode(reMatchedNode);
+            logTerminal(`[3D GRAPH] Activated satellite constellation & located node: "${reMatchedNode.label}"`, 'cyan');
+          }
+        }, 150);
+      } else {
+        logTerminal(`[3D GRAPH] Search failed: no node containing "${query}"`, 'red');
+      }
     }
   };
   
