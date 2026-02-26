@@ -697,6 +697,13 @@ body {
   text-shadow: 0 0 5px var(--color-cyan-glow);
 }
 
+#satellites-toggle-btn.active {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.25);
+  color: var(--color-green);
+  text-shadow: 0 0 5px var(--color-green-glow);
+}
+
 .graph-toolbar .divider {
   width: 1px;
   height: 16px;
