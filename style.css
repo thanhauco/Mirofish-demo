@@ -704,6 +704,13 @@ body {
   text-shadow: 0 0 5px var(--color-green-glow);
 }
 
+#fullscreen-btn.active {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(0, 240, 255, 0.25);
+  color: var(--color-cyan);
+  text-shadow: 0 0 5px var(--color-cyan-glow);
+}
+
 .graph-toolbar .divider {
   width: 1px;
   height: 16px;
@@ -737,6 +744,22 @@ body {
   position: relative;
   min-height: 0;
   overflow: hidden;
+}
+
+.cytoscape-wrapper:fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #060913 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.cytoscape-wrapper:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #060913 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 #3d-graph {
