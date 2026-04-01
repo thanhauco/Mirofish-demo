@@ -23,7 +23,7 @@ let state = {
   activeScenarioIndex: 0,
   currentSimTimeout: null,
   activeTab: 'prompt',
-  autoOrbit: true,
+  autoOrbit: false,
   showSatellites: false
 };
 
@@ -302,6 +302,32 @@ const coreEdges = [
   { source: 'smart_contract', target: 'on_chain_ledger', label: 'Event emit', id: 'e10' }
 ];
 
+const clusters = [
+  { coreId: 'hormuz_shipping', prefix: 'Tanker AIS', color: '#ff3c5f', type: 'geopolitical', desc: 'Cargo vessel telemetry tracking coordinates.' },
+  { coreId: 'opec_cartel', prefix: 'OPEC Well', color: '#b64eff', type: 'geopolitical', desc: 'State oil extraction terminal monitor.' },
+  { coreId: 'osint', prefix: 'OSINT Feed', color: '#ffaa00', type: 'stack', desc: 'Geopolitical alert intelligence stream feed.' },
+  { coreId: 'dxy_index', prefix: 'DXY Currency', color: '#5eaeff', type: 'macro', desc: 'Macroeconomic currency fluctuation tracker.' },
+  { coreId: 'on_chain_ledger', prefix: 'EVM Validator', color: '#00ffaa', type: 'onchain', desc: 'EVM blockchain node validating trading logs.' }
+];
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getBaselineLinkColor(l) {
+  if (l.isSatellite) {
+    const cluster = clusters.find(c => c.coreId === l.cluster);
+    return cluster ? hexToRgba(cluster.color, 0.05) : 'rgba(255,255,255,0.03)';
+  } else if (l.isMajorLink) {
+    const cluster = clusters.find(c => c.coreId === l.cluster);
+    return cluster ? hexToRgba(cluster.color, 0.18) : 'rgba(255,255,255,0.12)';
+  }
+  return 'rgba(255,255,255,0.2)';
+}
+
 function generateConstellation() {
   // 1. Push core nodes
   coreNodes.forEach(n => allNodes.push({ ...n }));
@@ -311,13 +337,6 @@ function generateConstellation() {
   
   // 3. Generate 190 Secondary Major nodes (38 per cluster) & 800 Satellites (160 per cluster)
   // Total: 10 Core + 190 Major + 800 Satellites = 1,000 nodes total
-  const clusters = [
-    { coreId: 'hormuz_shipping', prefix: 'Tanker AIS', color: '#ff3c5f', type: 'geopolitical', desc: 'Cargo vessel telemetry tracking coordinates.' },
-    { coreId: 'opec_cartel', prefix: 'OPEC Well', color: '#b64eff', type: 'geopolitical', desc: 'State oil extraction terminal monitor.' },
-    { coreId: 'osint', prefix: 'OSINT Feed', color: '#ffaa00', type: 'stack', desc: 'Geopolitical alert intelligence stream feed.' },
-    { coreId: 'dxy_index', prefix: 'DXY Currency', color: '#5eaeff', type: 'macro', desc: 'Macroeconomic currency fluctuation tracker.' },
-    { coreId: 'on_chain_ledger', prefix: 'EVM Validator', color: '#00ffaa', type: 'onchain', desc: 'EVM blockchain node validating trading logs.' }
-  ];
   
   clusters.forEach(c => {
     // Generate 38 Major nodes for this cluster
@@ -338,7 +357,7 @@ function generateConstellation() {
         source: majorId,
         target: c.coreId,
         width: 1.2,
-        color: 'rgba(255,255,255,0.12)',
+        color: hexToRgba(c.color, 0.18),
         isMajorLink: true,
         cluster: c.coreId
       });
@@ -363,7 +382,7 @@ function generateConstellation() {
         source: satId,
         target: parentMajorId,
         width: 0.5,
-        color: 'rgba(255,255,255,0.02)',
+        color: hexToRgba(c.color, 0.05),
         isSatellite: true,
         cluster: c.coreId
       });
@@ -429,10 +448,67 @@ function init3DGraph() {
     .backgroundColor('rgba(6, 9, 19, 0)') // transparent background so our CSS backgrounds show through
     .showNavInfo(false)
     .nodeVal(node => node.size)
-    .nodeColor(node => node.color)
     .nodeLabel(node => `<div class="graph-info-msg"><strong>${node.label}</strong><br>${node.desc}</div>`)
     .linkWidth(link => link.width)
     .linkColor(link => link.color)
+    
+    // Premium 3D Custom WebGL node structures
+    .nodeThreeObject(node => {
+      const THREE = window.THREE;
+      if (!THREE) return null;
+      
+      let obj;
+      if (node.isCore) {
+        const group = new THREE.Group();
+        
+        const sphereGeo = new THREE.SphereGeometry(node.size * 0.8, 16, 16);
+        const sphereMat = new THREE.MeshBasicMaterial({
+          color: node.color,
+          transparent: true,
+          opacity: 0.95
+        });
+        const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+        group.add(sphereMesh);
+        
+        const outerGeo = new THREE.OctahedronGeometry(node.size * 1.5, 0);
+        const outerMat = new THREE.MeshBasicMaterial({
+          color: node.color,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.35
+        });
+        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+        group.add(outerMesh);
+        
+        outerMesh.onBeforeRender = () => {
+          outerMesh.rotation.x += 0.008;
+          outerMesh.rotation.y += 0.015;
+        };
+        
+        obj = group;
+      } else if (node.isMajor) {
+        const geo = new THREE.DodecahedronGeometry(node.size * 0.9, 0);
+        const mat = new THREE.MeshStandardMaterial({
+          color: node.color,
+          metalness: 0.9,
+          roughness: 0.1,
+          emissive: node.color,
+          emissiveIntensity: 0.2
+        });
+        obj = new THREE.Mesh(geo, mat);
+      } else {
+        const geo = new THREE.BoxGeometry(node.size * 1.4, node.size * 1.4, node.size * 1.4);
+        const mat = new THREE.MeshBasicMaterial({
+          color: node.color,
+          transparent: true,
+          opacity: 0.8
+        });
+        obj = new THREE.Mesh(geo, mat);
+      }
+      
+      node.__threeObj = obj;
+      return obj;
+    })
     
     // Directional Particle setup
     .linkDirectionalParticles(link => link.particles || 0)
@@ -441,15 +517,16 @@ function init3DGraph() {
     .linkDirectionalParticleColor(link => link.particleColor || '#ffffff')
     
     // Dynamic physics configurations
-    .cooldownTicks(100) // stop simulation after 100 ticks to preserve cpu
+    .cooldownTicks(60) // stop simulation after 60 ticks to settle static layout quickly
     .onNodeClick(node => {
       selectNode(node);
     })
     
-    // DRAG ANIMATIONS - Fluid responses as requested
+    // DRAG ANIMATIONS - Custom WebGL scaling & particle injection
     .onNodeDrag((node) => {
-      // Glow and double size
-      node.size = node.isCore ? 35 : (node.isMajor ? 15 : 10);
+      if (node.__threeObj) {
+        node.__threeObj.scale.set(2.0, 2.0, 2.0);
+      }
       
       // Inject particle stream along connected links
       const activeLinks = Graph.graphData().links;
@@ -464,15 +541,16 @@ function init3DGraph() {
           l.color = node.color;
         }
       });
-      // Refresh 3D Graph bindings
-      Graph.nodeVal(n => n.size);
+      
       Graph.linkColor(l => l.color);
       Graph.linkDirectionalParticles(l => l.particles);
     })
     
-    // DRAG RELEASE ANIMATION - Physics settling & particle blast
+    // DRAG RELEASE ANIMATION - Reset scale, emit particle wave & settle
     .onNodeDragEnd((node) => {
-      node.size = node.isCore ? 14 : (node.isMajor ? 6 : 2);
+      if (node.__threeObj) {
+        node.__threeObj.scale.set(1.0, 1.0, 1.0);
+      }
       
       // Emit a fast ripple along connected edges
       const activeLinks = Graph.graphData().links;
@@ -487,7 +565,6 @@ function init3DGraph() {
         }
       });
       
-      Graph.nodeVal(n => n.size);
       Graph.linkDirectionalParticles(l => l.particles);
       
       // Fade out blast after 1s
@@ -498,7 +575,7 @@ function init3DGraph() {
                               (typeof l.target === 'object' ? l.target.id === node.id : l.target === node.id);
           if (isConnected) {
             l.particles = 0;
-            l.color = l.isSatellite ? 'rgba(255,255,255,0.03)' : (l.isMajorLink ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)');
+            l.color = getBaselineLinkColor(l);
           }
         });
         Graph.linkColor(l => l.color);
@@ -512,25 +589,6 @@ function init3DGraph() {
   // Customize D3 forces to arrange clusters neatly in 3D Space
   Graph.d3Force('charge').strength(-80);
   Graph.d3Force('link').distance(link => link.isMajorLink ? 50 : 100);
-  
-  // Continuous Breathing Loop at 60 FPS
-  let angle = 0;
-  function breatheLoop() {
-    angle += 0.04;
-    const activeNodes = Graph.graphData().nodes;
-    activeNodes.forEach(node => {
-      // Core nodes breathe larger, satellites breathing is subtle
-      if (!node.dragged) {
-        const base = node.isCore ? 14 : (node.isMajor ? 6 : 2);
-        const amp = node.isCore ? 1.5 : (node.isMajor ? 0.8 : 0.4);
-        const freq = node.isCore ? 1 : 2.5;
-        node.size = base + Math.sin(angle * freq) * amp;
-      }
-    });
-    Graph.nodeVal(node => node.size);
-    requestAnimationFrame(breatheLoop);
-  }
-  breatheLoop();
 
   // Sync zoom slider with mouse wheel zoom
   setInterval(() => {
@@ -728,7 +786,7 @@ function executePipeline(scenarioIdx) {
   // Clear previous link particles
   allLinks.forEach(l => {
     l.particles = 0;
-    l.color = l.isSatellite ? 'rgba(255,255,255,0.03)' : (l.isMajorLink ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)');
+    l.color = getBaselineLinkColor(l);
   });
   Graph.linkDirectionalParticles(l => l.particles);
   Graph.linkColor(l => l.color);
@@ -1015,7 +1073,7 @@ function executePipeline(scenarioIdx) {
               allLinks.forEach(l => {
                 if (l.isSatellite) {
                   l.particles = 0;
-                  l.color = 'rgba(255,255,255,0.03)';
+                  l.color = getBaselineLinkColor(l);
                 }
               });
               Graph.linkDirectionalParticles(l => l.particles);
@@ -1328,6 +1386,43 @@ document.addEventListener('DOMContentLoaded', () => {
       AudioEngine.playPing();
     }
   });
+
+  // Fullscreen bindings
+  const fsBtn = document.getElementById('fullscreen-btn');
+  const wrapper = document.querySelector('.cytoscape-wrapper');
+  
+  if (fsBtn && wrapper) {
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen().catch(err => {
+          logTerminal(`[ERROR] Fullscreen failed: ${err.message}`, 'red');
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFullscreen = !!document.fullscreenElement;
+      if (isFullscreen) {
+        fsBtn.innerHTML = '<i class="fa-solid fa-compress"></i> Exit Fullscreen';
+        fsBtn.classList.add('active');
+        logTerminal("[3D GRAPH] Switched to fullscreen mode.", "cyan");
+      } else {
+        fsBtn.innerHTML = '<i class="fa-solid fa-expand"></i> Fullscreen';
+        fsBtn.classList.remove('active');
+        logTerminal("[3D GRAPH] Exited fullscreen mode.", "cyan");
+      }
+      
+      if (Graph) {
+        setTimeout(() => {
+          Graph.width(wrapper.clientWidth);
+          Graph.height(wrapper.clientHeight);
+        }, 150);
+      }
+      AudioEngine.playPing();
+    });
+  }
 
   // Start initial pipeline sequence after 2.5 seconds
   setTimeout(() => {
