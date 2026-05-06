@@ -452,7 +452,7 @@ function init3DGraph() {
     .linkWidth(link => link.width)
     .linkColor(link => link.color)
     
-    // Premium 3D Custom WebGL node structures
+    // Premium 3D Custom WebGL node structures (Spheres & Torus rings)
     .nodeThreeObject(node => {
       const THREE = window.THREE;
       if (!THREE) return null;
@@ -461,47 +461,70 @@ function init3DGraph() {
       if (node.isCore) {
         const group = new THREE.Group();
         
-        const sphereGeo = new THREE.SphereGeometry(node.size * 0.8, 16, 16);
-        const sphereMat = new THREE.MeshBasicMaterial({
+        // Inner glowing PBR core sphere (lower emissiveIntensity for shading depth)
+        const sphereGeo = new THREE.SphereGeometry(node.size * 0.85, 32, 32);
+        const sphereMat = new THREE.MeshStandardMaterial({
           color: node.color,
+          metalness: 0.9,
+          roughness: 0.15,
+          emissive: node.color,
+          emissiveIntensity: 0.25, // allow 3D shading
           transparent: true,
           opacity: 0.95
         });
         const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
         group.add(sphereMesh);
         
-        const outerGeo = new THREE.OctahedronGeometry(node.size * 1.5, 0);
-        const outerMat = new THREE.MeshBasicMaterial({
-          color: node.color,
-          wireframe: true,
-          transparent: true,
-          opacity: 0.35
-        });
-        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
-        group.add(outerMesh);
-        
-        outerMesh.onBeforeRender = () => {
-          outerMesh.rotation.x += 0.008;
-          outerMesh.rotation.y += 0.015;
-        };
-        
-        obj = group;
-      } else if (node.isMajor) {
-        const geo = new THREE.DodecahedronGeometry(node.size * 0.9, 0);
-        const mat = new THREE.MeshStandardMaterial({
+        // Outer rotating orbital rings (Torus geometries)
+        const torusMat = new THREE.MeshStandardMaterial({
           color: node.color,
           metalness: 0.9,
           roughness: 0.1,
           emissive: node.color,
-          emissiveIntensity: 0.2
+          emissiveIntensity: 0.3
+        });
+        
+        const ring1Geo = new THREE.TorusGeometry(node.size * 1.5, node.size * 0.08, 8, 48);
+        const ring1 = new THREE.Mesh(ring1Geo, torusMat);
+        ring1.rotation.x = Math.PI / 2; // flatten horizontally
+        group.add(ring1);
+        
+        const ring2Geo = new THREE.TorusGeometry(node.size * 1.55, node.size * 0.08, 8, 48);
+        const ring2 = new THREE.Mesh(ring2Geo, torusMat);
+        ring2.rotation.y = Math.PI / 4; // tilt vertically
+        group.add(ring2);
+        
+        // Continuous independent ring rotations
+        ring1.onBeforeRender = () => {
+          ring1.rotation.z += 0.015;
+        };
+        
+        ring2.onBeforeRender = () => {
+          ring2.rotation.x += 0.01;
+          ring2.rotation.y += 0.01;
+        };
+        
+        obj = group;
+      } else if (node.isMajor) {
+        // Major Hubs: Shiny, reflective PBR sphere (increased segments for smoother circles)
+        const geo = new THREE.SphereGeometry(node.size, 32, 32);
+        const mat = new THREE.MeshStandardMaterial({
+          color: node.color,
+          metalness: 0.95,
+          roughness: 0.1,
+          emissive: node.color,
+          emissiveIntensity: 0.15 // lower emissive for beautiful 3D shading
         });
         obj = new THREE.Mesh(geo, mat);
       } else {
-        const geo = new THREE.BoxGeometry(node.size * 1.4, node.size * 1.4, node.size * 1.4);
-        const mat = new THREE.MeshBasicMaterial({
+        // Satellites: Small spherical glowing beads (increased segments for smoother circles)
+        const geo = new THREE.SphereGeometry(node.size * 1.3, 16, 16);
+        const mat = new THREE.MeshStandardMaterial({
           color: node.color,
-          transparent: true,
-          opacity: 0.8
+          metalness: 0.85,
+          roughness: 0.15,
+          emissive: node.color,
+          emissiveIntensity: 0.1 // lower emissive for depth
         });
         obj = new THREE.Mesh(geo, mat);
       }
@@ -589,6 +612,27 @@ function init3DGraph() {
   // Customize D3 forces to arrange clusters neatly in 3D Space
   Graph.d3Force('charge').strength(-80);
   Graph.d3Force('link').distance(link => link.isMajorLink ? 50 : 100);
+
+  // Add custom offset lights for realistic 3D specular highlight and shading
+  const scene = Graph.scene();
+  if (scene && window.THREE) {
+    const THREE = window.THREE;
+    
+    // Primary key light (bright white from top-right-front)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    keyLight.position.set(300, 400, 300);
+    scene.add(keyLight);
+    
+    // Fill light (subtle cyan from bottom-left-back for futuristic styling)
+    const fillLight = new THREE.DirectionalLight(0x00f0ff, 0.6);
+    fillLight.position.set(-300, -400, -300);
+    scene.add(fillLight);
+    
+    // Back light (warm amber rim light from behind)
+    const rimLight = new THREE.DirectionalLight(0xffaa00, 0.4);
+    rimLight.position.set(0, 200, -500);
+    scene.add(rimLight);
+  }
 
   // Sync zoom slider with mouse wheel zoom
   setInterval(() => {
