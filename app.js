@@ -318,14 +318,16 @@ function hexToRgba(hex, alpha) {
 }
 
 function getBaselineLinkColor(l) {
+  const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+  const sourceNode = allNodes.find(n => n.id === sourceId);
+  const baseColor = sourceNode ? sourceNode.color : '#ffffff';
+
   if (l.isSatellite) {
-    const cluster = clusters.find(c => c.coreId === l.cluster);
-    return cluster ? hexToRgba(cluster.color, 0.05) : 'rgba(255,255,255,0.03)';
+    return hexToRgba(baseColor, 0.25);
   } else if (l.isMajorLink) {
-    const cluster = clusters.find(c => c.coreId === l.cluster);
-    return cluster ? hexToRgba(cluster.color, 0.18) : 'rgba(255,255,255,0.12)';
+    return hexToRgba(baseColor, 0.5);
   }
-  return 'rgba(255,255,255,0.2)';
+  return hexToRgba(baseColor, 0.7); // Core links
 }
 
 function generateConstellation() {
@@ -333,7 +335,7 @@ function generateConstellation() {
   coreNodes.forEach(n => allNodes.push({ ...n }));
   
   // 2. Push core edges
-  coreEdges.forEach(e => allLinks.push({ ...e, width: 2, color: 'rgba(255,255,255,0.2)' }));
+  coreEdges.forEach(e => allLinks.push({ ...e, width: 4.0, color: null }));
   
   // 3. Generate 190 Secondary Major nodes (38 per cluster) & 800 Satellites (160 per cluster)
   // Total: 10 Core + 190 Major + 800 Satellites = 1,000 nodes total
@@ -356,8 +358,8 @@ function generateConstellation() {
       allLinks.push({
         source: majorId,
         target: c.coreId,
-        width: 1.2,
-        color: hexToRgba(c.color, 0.18),
+        width: 2.2,
+        color: null,
         isMajorLink: true,
         cluster: c.coreId
       });
@@ -381,12 +383,17 @@ function generateConstellation() {
       allLinks.push({
         source: satId,
         target: parentMajorId,
-        width: 0.5,
-        color: hexToRgba(c.color, 0.05),
+        width: 1.0,
+        color: null,
         isSatellite: true,
         cluster: c.coreId
       });
     }
+  });
+
+  // Resolve link colors
+  allLinks.forEach(l => {
+    l.color = getBaselineLinkColor(l);
   });
 }
 
@@ -452,7 +459,7 @@ function init3DGraph() {
     .linkWidth(link => link.width)
     .linkColor(link => link.color)
     
-    // Premium 3D Custom WebGL node structures (Spheres & Torus rings)
+    // Premium 3D Custom WebGL node structures (White hot core + colored outer halo)
     .nodeThreeObject(node => {
       const THREE = window.THREE;
       if (!THREE) return null;
@@ -461,35 +468,37 @@ function init3DGraph() {
       if (node.isCore) {
         const group = new THREE.Group();
         
-        // Inner glowing PBR core sphere (lower emissiveIntensity for shading depth)
-        const sphereGeo = new THREE.SphereGeometry(node.size * 0.85, 32, 32);
-        const sphereMat = new THREE.MeshStandardMaterial({
+        // Inner bright, solid white sphere core
+        const innerGeo = new THREE.SphereGeometry(node.size * 0.55, 32, 32);
+        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+        group.add(innerMesh);
+        
+        // Outer glowing halo matching node color
+        const outerGeo = new THREE.SphereGeometry(node.size * 1.1, 32, 32);
+        const outerMat = new THREE.MeshBasicMaterial({
           color: node.color,
-          metalness: 0.9,
-          roughness: 0.15,
-          emissive: node.color,
-          emissiveIntensity: 0.25, // allow 3D shading
           transparent: true,
-          opacity: 0.95
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide
         });
-        const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
-        group.add(sphereMesh);
+        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+        group.add(outerMesh);
         
         // Outer rotating orbital rings (Torus geometries)
-        const torusMat = new THREE.MeshStandardMaterial({
+        const torusMat = new THREE.MeshBasicMaterial({
           color: node.color,
-          metalness: 0.9,
-          roughness: 0.1,
-          emissive: node.color,
-          emissiveIntensity: 0.3
+          transparent: true,
+          opacity: 0.6
         });
         
-        const ring1Geo = new THREE.TorusGeometry(node.size * 1.5, node.size * 0.08, 8, 48);
+        const ring1Geo = new THREE.TorusGeometry(node.size * 1.5, node.size * 0.06, 8, 48);
         const ring1 = new THREE.Mesh(ring1Geo, torusMat);
         ring1.rotation.x = Math.PI / 2; // flatten horizontally
         group.add(ring1);
         
-        const ring2Geo = new THREE.TorusGeometry(node.size * 1.55, node.size * 0.08, 8, 48);
+        const ring2Geo = new THREE.TorusGeometry(node.size * 1.55, node.size * 0.06, 8, 48);
         const ring2 = new THREE.Mesh(ring2Geo, torusMat);
         ring2.rotation.y = Math.PI / 4; // tilt vertically
         group.add(ring2);
@@ -506,27 +515,49 @@ function init3DGraph() {
         
         obj = group;
       } else if (node.isMajor) {
-        // Major Hubs: Shiny, reflective PBR sphere (increased segments for smoother circles)
-        const geo = new THREE.SphereGeometry(node.size, 32, 32);
-        const mat = new THREE.MeshStandardMaterial({
+        const group = new THREE.Group();
+        
+        // Inner bright, solid white core sphere
+        const innerGeo = new THREE.SphereGeometry(node.size * 0.55, 32, 32);
+        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+        group.add(innerMesh);
+        
+        // Outer glowing halo matching node color
+        const outerGeo = new THREE.SphereGeometry(node.size * 1.15, 32, 32);
+        const outerMat = new THREE.MeshBasicMaterial({
           color: node.color,
-          metalness: 0.95,
-          roughness: 0.1,
-          emissive: node.color,
-          emissiveIntensity: 0.15 // lower emissive for beautiful 3D shading
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide
         });
-        obj = new THREE.Mesh(geo, mat);
+        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+        group.add(outerMesh);
+        
+        obj = group;
       } else {
-        // Satellites: Small spherical glowing beads (increased segments for smoother circles)
-        const geo = new THREE.SphereGeometry(node.size * 1.3, 16, 16);
-        const mat = new THREE.MeshStandardMaterial({
+        const group = new THREE.Group();
+        
+        // Inner bright, solid white core sphere for Satellite
+        const innerGeo = new THREE.SphereGeometry(node.size * 0.55, 16, 16);
+        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+        group.add(innerMesh);
+        
+        // Outer glowing halo matching node color for Satellite
+        const outerGeo = new THREE.SphereGeometry(node.size * 1.25, 16, 16);
+        const outerMat = new THREE.MeshBasicMaterial({
           color: node.color,
-          metalness: 0.85,
-          roughness: 0.15,
-          emissive: node.color,
-          emissiveIntensity: 0.1 // lower emissive for depth
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide
         });
-        obj = new THREE.Mesh(geo, mat);
+        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+        group.add(outerMesh);
+        
+        obj = group;
       }
       
       node.__threeObj = obj;
