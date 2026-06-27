@@ -323,11 +323,11 @@ function getBaselineLinkColor(l) {
   const baseColor = sourceNode ? sourceNode.color : '#ffffff';
 
   if (l.isSatellite) {
-    return hexToRgba(baseColor, 0.25);
+    return hexToRgba(baseColor, 0.45);
   } else if (l.isMajorLink) {
-    return hexToRgba(baseColor, 0.5);
+    return hexToRgba(baseColor, 0.8);
   }
-  return hexToRgba(baseColor, 0.7); // Core links
+  return hexToRgba(baseColor, 1.0); // Core links
 }
 
 function generateConstellation() {
@@ -335,7 +335,7 @@ function generateConstellation() {
   coreNodes.forEach(n => allNodes.push({ ...n }));
   
   // 2. Push core edges
-  coreEdges.forEach(e => allLinks.push({ ...e, width: 4.0, color: null }));
+  coreEdges.forEach(e => allLinks.push({ ...e, width: 5.0, color: null }));
   
   // 3. Generate 190 Secondary Major nodes (38 per cluster) & 800 Satellites (160 per cluster)
   // Total: 10 Core + 190 Major + 800 Satellites = 1,000 nodes total
@@ -358,7 +358,7 @@ function generateConstellation() {
       allLinks.push({
         source: majorId,
         target: c.coreId,
-        width: 2.2,
+        width: 3.0,
         color: null,
         isMajorLink: true,
         cluster: c.coreId
@@ -383,14 +383,14 @@ function generateConstellation() {
       allLinks.push({
         source: satId,
         target: parentMajorId,
-        width: 1.0,
+        width: 1.5,
         color: null,
         isSatellite: true,
         cluster: c.coreId
       });
     }
   });
-
+}
   // Resolve link colors
   allLinks.forEach(l => {
     l.color = getBaselineLinkColor(l);
@@ -464,29 +464,47 @@ function init3DGraph() {
       const THREE = window.THREE;
       if (!THREE) return null;
       
-      let obj;
+      // Create a high-res 2D canvas to draw the sharp flat circle
+      const canvas = document.createElement('canvas');
+      const canvasSize = 128;
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      const ctx = canvas.getContext('2d');
+      
+      const cx = canvasSize / 2;
+      const cy = canvasSize / 2;
+      const outerRadius = (canvasSize / 2) - 4; // leave margin for clean anti-aliased edge
+      const innerRadius = outerRadius * 0.72; // inner core is ~72% of total radius
+      
+      // Draw outer circle with sharp node color border
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = node.color || '#ffffff';
+      ctx.fill();
+      
+      // Draw inner circle with sharp white core
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true
+      });
+      
+      const sprite = new THREE.Sprite(material);
+      // Scale sprite using node's size parameter (multiplied for proportional fit)
+      sprite.scale.set(node.size * 2.2, node.size * 2.2, 1);
+      
+      const group = new THREE.Group();
+      group.add(sprite);
+      
       if (node.isCore) {
-        const group = new THREE.Group();
-        
-        // Inner bright, solid white sphere core
-        const innerGeo = new THREE.SphereGeometry(node.size * 0.55, 32, 32);
-        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-        group.add(innerMesh);
-        
-        // Outer glowing halo matching node color
-        const outerGeo = new THREE.SphereGeometry(node.size * 1.1, 32, 32);
-        const outerMat = new THREE.MeshBasicMaterial({
-          color: node.color,
-          transparent: true,
-          opacity: 0.45,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide
-        });
-        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
-        group.add(outerMesh);
-        
-        // Outer rotating orbital rings (Torus geometries)
+        // Core nodes retain their 3D rotating torus rings
         const torusMat = new THREE.MeshBasicMaterial({
           color: node.color,
           transparent: true,
@@ -512,56 +530,10 @@ function init3DGraph() {
           ring2.rotation.x += 0.01;
           ring2.rotation.y += 0.01;
         };
-        
-        obj = group;
-      } else if (node.isMajor) {
-        const group = new THREE.Group();
-        
-        // Inner bright, solid white core sphere
-        const innerGeo = new THREE.SphereGeometry(node.size * 0.55, 32, 32);
-        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-        group.add(innerMesh);
-        
-        // Outer glowing halo matching node color
-        const outerGeo = new THREE.SphereGeometry(node.size * 1.15, 32, 32);
-        const outerMat = new THREE.MeshBasicMaterial({
-          color: node.color,
-          transparent: true,
-          opacity: 0.45,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide
-        });
-        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
-        group.add(outerMesh);
-        
-        obj = group;
-      } else {
-        const group = new THREE.Group();
-        
-        // Inner bright, solid white core sphere for Satellite
-        const innerGeo = new THREE.SphereGeometry(node.size * 0.55, 16, 16);
-        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-        group.add(innerMesh);
-        
-        // Outer glowing halo matching node color for Satellite
-        const outerGeo = new THREE.SphereGeometry(node.size * 1.25, 16, 16);
-        const outerMat = new THREE.MeshBasicMaterial({
-          color: node.color,
-          transparent: true,
-          opacity: 0.45,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide
-        });
-        const outerMesh = new THREE.Mesh(outerGeo, outerMat);
-        group.add(outerMesh);
-        
-        obj = group;
       }
       
-      node.__threeObj = obj;
-      return obj;
+      node.__threeObj = group;
+      return group;
     })
     
     // Directional Particle setup
